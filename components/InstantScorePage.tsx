@@ -13,6 +13,9 @@ import { DocumentDuplicateIcon } from './icons/DocumentDuplicateIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
 import { StarIcon } from './icons/StarIcon';
+import { ChartBarIcon } from './icons/ChartBarIcon';
+import { LightbulbIcon } from './icons/LightbulbIcon';
+import { KeyIcon } from './icons/KeyIcon';
 
 const InstantScorePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [profileText, setProfileText] = useState('');
@@ -222,6 +225,9 @@ const StarRating: React.FC<{ score: number; label: string }> = ({ score, label }
 );
 
 const InstantScoreResults: React.FC<{ result: InstantScoreResult }> = ({ result }) => {
+    type ResultTab = 'overview' | 'improvements' | 'aiContent' | 'keywords' | 'comparison';
+    const [activeTab, setActiveTab] = useState<ResultTab>('overview');
+
     const getScoreColor = (value: number, max: number) => {
         const percentage = (value / max) * 100;
         if (percentage >= 85) return 'text-green-600';
@@ -229,129 +235,153 @@ const InstantScoreResults: React.FC<{ result: InstantScoreResult }> = ({ result 
         return 'text-red-600';
     };
 
+    const TabButton: React.FC<{ tab: ResultTab; label: string; icon: React.ReactNode }> = ({ tab, label, icon }) => (
+        <button
+            onClick={() => setActiveTab(tab)}
+            className={`flex items-center gap-2 whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tab
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+        >
+            {icon}
+            {label}
+        </button>
+    );
+
     return (
-        <div className="space-y-8 animate-fade-in">
-             <div className="flex justify-between items-center">
+        <div className="space-y-4 animate-fade-in">
+            <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-black">Profile Strength Report</h3>
                 <button onClick={() => window.print()} className="bg-slate-200 text-black font-semibold py-2 px-4 rounded-lg text-sm hover:bg-slate-300 transition-colors no-print">Download Report</button>
             </div>
-            <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="flex-shrink-0">
-                    <ScoreChart score={result.overallScore} />
-                </div>
-                <div className="space-y-2 w-full">
-                    {Object.entries(result.breakdown).map(([key, value]: [string, InstantScoreDetail]) => (
-                        <div key={key} className="p-3 bg-slate-50 rounded-lg">
-                            <div className="flex justify-between items-center">
-                                <p className="font-semibold capitalize text-black">{key.replace(/([A-Z])/g, ' $1')}</p>
-                                <p className={`font-bold text-lg ${getScoreColor(value.score, 20)}`}>{value.score}<span className="text-sm font-normal text-black">/20</span></p>
-                            </div>
-                            <p className="text-xs text-black mt-1">{value.feedback}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
 
-             <div>
-                <h3 className="text-xl font-bold text-black mb-3">Current Status</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <h4 className="font-semibold text-green-800 flex items-center">
-                            <CheckCircleIcon className="h-5 w-5 mr-2" />
-                            Strengths
-                        </h4>
-                        <ul className="list-disc list-inside mt-2 text-sm text-green-700 space-y-1">
-                            {result.currentStatus.strengths.map((item, i) => <li key={i}>{item}</li>)}
-                        </ul>
-                     </div>
-                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h4 className="font-semibold text-yellow-800 flex items-center">
-                            <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                            Weaknesses
-                        </h4>
-                        <ul className="list-disc list-inside mt-2 text-sm text-yellow-700 space-y-1">
-                             {result.currentStatus.weaknesses.map((item, i) => <li key={i}>{item}</li>)}
-                        </ul>
-                     </div>
-                 </div>
+            {/* Tab Nav */}
+            <div className="border-b border-slate-200 -mx-6 px-4 no-print">
+                <nav className="-mb-px flex space-x-2 overflow-x-auto" aria-label="Tabs">
+                    <TabButton tab="overview" label="Overview" icon={<ChartBarIcon className="h-5 w-5" />} />
+                    <TabButton tab="improvements" label="Improvement Plan" icon={<LightbulbIcon className="h-5 w-5" />} />
+                    <TabButton tab="aiContent" label="AI Content" icon={<SparklesIcon className="h-5 w-5" />} />
+                    <TabButton tab="keywords" label="Keywords" icon={<KeyIcon className="h-5 w-5" />} />
+                    {result.comparison && (
+                         <TabButton tab="comparison" label="Comparison" icon={<DocumentDuplicateIcon className="h-5 w-5" />} />
+                    )}
+                </nav>
             </div>
             
-            {result.comparison && (
-                 <div>
-                    <h3 className="text-xl font-bold text-black mb-3">
-                        <DocumentDuplicateIcon className="h-6 w-6 inline-block mr-2 text-blue-600" />
-                        Comparison Analysis
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-4">
-                        <p className="text-black text-sm">{result.comparison.summary}</p>
-                        {result.comparison.missingInLinkedIn?.length > 0 && (
-                            <div>
-                                <h4 className="font-semibold text-black">Add to LinkedIn (from your Resume):</h4>
-                                <ul className="list-disc list-inside mt-1 text-sm text-black">
-                                    {result.comparison.missingInLinkedIn.map((item, i) => <li key={i}>{item}</li>)}
-                                </ul>
+            {/* Tab Content */}
+            <div className="pt-4 min-h-[400px]">
+                {activeTab === 'overview' && (
+                    <div className="space-y-8 animate-fade-in">
+                        <div className="flex flex-col md:flex-row items-center gap-6">
+                            <div className="flex-shrink-0">
+                                <ScoreChart score={result.overallScore} />
                             </div>
-                        )}
-                         {result.comparison.missingInResume?.length > 0 && (
-                            <div>
-                                <h4 className="font-semibold text-black">Add to Resume (from your LinkedIn):</h4>
-                                <ul className="list-disc list-inside mt-1 text-sm text-black">
-                                    {result.comparison.missingInResume.map((item, i) => <li key={i}>{item}</li>)}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <div>
-                <h3 className="text-xl font-bold text-black mb-3">Top 10 Keyword Recommendations</h3>
-                <div className="flex flex-wrap gap-2">
-                    {result.keywordRecommendations.map(kw => (
-                        <span key={kw} className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">{kw}</span>
-                    ))}
-                </div>
-            </div>
-
-            <div>
-                <h3 className="text-xl font-bold text-black mb-3">
-                    <SparklesIcon className="h-6 w-6 inline-block mr-2 text-blue-600" />
-                    AI-Generated Content
-                </h3>
-                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-                    <h4 className="font-semibold text-black text-md">Optimized Headline / Title Variations</h4>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                        {result.optimizedHeadlines.map((headline, i) => (
-                           <li key={i} className="text-sm text-black">{headline}</li>
-                        ))}
-                    </ul>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-black text-md">Optimized Summary / Objective</h4>
-                    <p className="text-sm text-black whitespace-pre-wrap mt-2">{result.optimizedSummary}</p>
-                </div>
-            </div>
-
-            <div>
-                <h3 className="text-xl font-bold text-black mb-3">Actionable Improvement Plan</h3>
-                {Object.entries(result.improvementTips).map(([sectionKey, tips]: [string, ImprovementTip[]]) => (
-                    tips.length > 0 && (
-                        <div key={sectionKey}>
-                            <h4 className="font-semibold capitalize text-black text-md mt-4 mb-2">{sectionKey} Tips</h4>
-                            <ul className="list-disc list-inside space-y-2">
-                                {tips.map((tip, i) => (
-                                    <li key={i} className="bg-white p-3 rounded-lg border">
-                                        <p className="text-sm text-black">{tip.suggestion}</p>
-                                        <div className="flex space-x-4 mt-2 border-t pt-2">
-                                            <StarRating score={tip.impact} label="Impact" />
-                                            <StarRating score={tip.ease} label="Ease" />
+                            <div className="space-y-2 w-full">
+                                {Object.entries(result.breakdown).map(([key, value]: [string, InstantScoreDetail]) => (
+                                    <div key={key} className="p-3 bg-slate-50 rounded-lg">
+                                        <div className="flex justify-between items-center">
+                                            <p className="font-semibold capitalize text-black">{key.replace(/([A-Z])/g, ' $1')}</p>
+                                            <p className={`font-bold text-lg ${getScoreColor(value.score, 20)}`}>{value.score}<span className="text-sm font-normal text-black">/20</span></p>
                                         </div>
-                                    </li>
+                                        <p className="text-xs text-black mt-1">{value.feedback}</p>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
-                    )
-                ))}
+                        <div>
+                            <h3 className="text-xl font-bold text-black mb-3">Current Status</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <h4 className="font-semibold text-green-800 flex items-center"><CheckCircleIcon className="h-5 w-5 mr-2" />Strengths</h4>
+                                    <ul className="list-disc list-inside mt-2 text-sm text-green-700 space-y-1">
+                                        {result.currentStatus.strengths.map((item, i) => <li key={i}>{item}</li>)}
+                                    </ul>
+                                </div>
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <h4 className="font-semibold text-yellow-800 flex items-center"><ExclamationTriangleIcon className="h-5 w-5 mr-2" />Weaknesses</h4>
+                                    <ul className="list-disc list-inside mt-2 text-sm text-yellow-700 space-y-1">
+                                        {result.currentStatus.weaknesses.map((item, i) => <li key={i}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {activeTab === 'improvements' && (
+                    <div className="animate-fade-in">
+                        <h3 className="text-xl font-bold text-black mb-3">Actionable Improvement Plan</h3>
+                        {Object.entries(result.improvementTips).map(([sectionKey, tips]: [string, ImprovementTip[]]) => (
+                            tips.length > 0 && (
+                                <div key={sectionKey}>
+                                    <h4 className="font-semibold capitalize text-black text-md mt-4 mb-2">{sectionKey} Tips</h4>
+                                    <ul className="list-disc list-inside space-y-2">
+                                        {tips.map((tip, i) => (
+                                            <li key={i} className="bg-white p-3 rounded-lg border">
+                                                <p className="text-sm text-black">{tip.suggestion}</p>
+                                                <div className="flex space-x-4 mt-2 border-t pt-2">
+                                                    <StarRating score={tip.impact} label="Impact" />
+                                                    <StarRating score={tip.ease} label="Ease" />
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )
+                        ))}
+                    </div>
+                )}
+                 {activeTab === 'aiContent' && (
+                    <div className="space-y-6 animate-fade-in">
+                        <h3 className="text-xl font-bold text-black mb-3"><SparklesIcon className="h-6 w-6 inline-block mr-2 text-blue-600" />AI-Generated Content</h3>
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+                           <h4 className="font-semibold text-black text-md">Optimized Headline / Title Variations</h4>
+                           <ul className="list-disc list-inside mt-2 space-y-1">
+                               {result.optimizedHeadlines.map((headline, i) => (
+                                  <li key={i} className="text-sm text-black">{headline}</li>
+                               ))}
+                           </ul>
+                       </div>
+                       <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                           <h4 className="font-semibold text-black text-md">Optimized Summary / Objective</h4>
+                           <p className="text-sm text-black whitespace-pre-wrap mt-2">{result.optimizedSummary}</p>
+                       </div>
+                   </div>
+                )}
+                 {activeTab === 'keywords' && (
+                    <div className="animate-fade-in">
+                        <h3 className="text-xl font-bold text-black mb-3">Top 10 Keyword Recommendations</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {result.keywordRecommendations.map(kw => (
+                                <span key={kw} className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">{kw}</span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {activeTab === 'comparison' && result.comparison && (
+                    <div className="animate-fade-in">
+                        <h3 className="text-xl font-bold text-black mb-3"><DocumentDuplicateIcon className="h-6 w-6 inline-block mr-2 text-blue-600" />Comparison Analysis</h3>
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-4">
+                            <p className="text-black text-sm">{result.comparison.summary}</p>
+                            {result.comparison.missingInLinkedIn?.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold text-black">Add to LinkedIn (from your Resume):</h4>
+                                    <ul className="list-disc list-inside mt-1 text-sm text-black">
+                                        {result.comparison.missingInLinkedIn.map((item, i) => <li key={i}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+                            {result.comparison.missingInResume?.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold text-black">Add to Resume (from your LinkedIn):</h4>
+                                    <ul className="list-disc list-inside mt-1 text-sm text-black">
+                                        {result.comparison.missingInResume.map((item, i) => <li key={i}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
